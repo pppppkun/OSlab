@@ -3,7 +3,7 @@
 .global start
 start:
 	pushl $13
-	pushl $ascpic
+	pushl $message
 	calll displayStr
 loop:
 	jmp loop
@@ -17,7 +17,7 @@ message:
 displayStr:
 	movl 4(%esp), %ebx
 	movl 8(%esp), %ecx
-	movl $0x0, %edi
+	movl $((80*16+16)*2), %edi
 	movb $0xf0, %ah
 nextChar:
 	movb (%ebx), %al
