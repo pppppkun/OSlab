@@ -11,6 +11,8 @@ void bootMain(void) {
 	}
 	// readSect((void*)elf, 1); // loading sector 1 to 0x8c00
 	// TODO jumping to the loaded program
+	asm volatile("movl $0x8c00, %eax");
+	asm volatile("jmp %eax");
 }
 
 void waitDisk(void) { // waiting for disk
