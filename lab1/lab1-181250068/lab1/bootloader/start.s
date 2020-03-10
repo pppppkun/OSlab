@@ -25,12 +25,11 @@ start:
 start32:
 	movw $0x10,%ax
 	movw %ax,%ds
-	movw %ax,%es
 	movw %ax,%ss
-	movw $0x18,%ax
 	movw %ax,%fs
+	movw $0x18,%ax
 	movw %ax,%gs
-	movw $0x7e00,%eax
+	movw $0x8c00,%eax
 	movw %eax,%esp
 	jmp bootMain
 
