@@ -775,9 +775,7 @@ int cp (const char *driver, const char *srcFilePath, const char *destFilePath) {
      * how to move the file to dir? 
      **/
     FILE * srcfile = fopen(srcFilePath, "r+");
-
-    fwrite((void *)srcfile, sizeof(FILE), 1, file);
-
+    copyData(file, srcfile, &superBlock, &destInode, destInodeOffset);
     return 0;
 
 }
