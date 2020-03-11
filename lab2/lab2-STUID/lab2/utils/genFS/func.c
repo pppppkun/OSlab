@@ -633,19 +633,25 @@ int mkdir (const char *driver, const char *destDirPath){
         fclose(file);
         return -1;
     }
+    // if the last char is '/' and we will delete it
     length = stringLen(destDirPath);
     if (destDirPath[length - 1] == '/') {
         cond = 1;
         *((char*)destDirPath + length - 1) = 0;
     }
+    // find the dir which want to create
+    // the way is finding the last '/' 
     ret = stringChrR(destDirPath, '/', &size);
     if (ret == -1) {
         printf("Incorrect destination file path.\n");
         fclose(file);
         return -1;
     }
+    // tmp = the first char after '/'
+    // and find the fatherDir
     tmp = *((char*)destDirPath + size + 1);
     *((char*)destDirPath + size + 1) = 0;
+    // read father
     ret = readInode(file, &superBlock, &fatherInode, &fatherInodeOffset, destDirPath);
     *((char*)destDirPath + size + 1) = tmp;
     if (ret == -1) {
@@ -699,7 +705,7 @@ int cp (const char *driver, const char *srcFilePath, const char *destFilePath) {
     int cond = 0;
     int ret = 0;
     int size = 0;
-    SuperBlock SuperBlock;
+    SuperBlock superBlock;
     int fatherInodeOffset = 0;
     int destInodeOffset = 0;
     Inode fatherInode;
@@ -716,22 +722,64 @@ int cp (const char *driver, const char *srcFilePath, const char *destFilePath) {
         printf("Failed to open driver.\n");
         return -1;
     }
-    ret = readSuperBlock(file, &SuperBlock);
+    ret = readSuperBlock(file, &superBlock);
     if(ret == -1)
     {
-        printf("Failed to load SuperBlock.\n");
+        printf("Failed to load superBlock.\n");
         fclose(file);
         return -1;
     }
-    if(srcFilePath == NULL || destFilePath == NULL)
+    if(destFilePath == NULL)
     {
-        printf("destDirPath == NULL");
+        printf("destFilePath == NULL");
         fclose(file);
         return -1;
     }
+    if(srcFilePath == NULL)
+    {
+        printf("srcFilePath == NULL");
+        fclose(file);
+        return -1;
+    }
+
+    destlength = stringLen(destFilePath);
+    if(destFilePath[destlength - 1] == '/')
+    {
+        cond = 1;
+        *((char*)destFilePath + destlength - 1) = 0;
+    }
+    tmp = *((char*)destFilePath + size + 1);
+    *((char*)destFilePath + size + 1) = 0;
     
+    ret = readInode(file, &superBlock, &fatherInode, &fatherInodeOffset, destFilePath);
+    *((char*)destFilePath + size + 1) = tmp;
+    if (ret == -1) {
+        printf("Failed to read father inode.\n");
+        if (cond == 1)
+            *((char*)destFilePath + destlength - 1) = '/';
+        fclose(file);
+        return -1;
+    }
+    ret = allocInode(file, &superBlock, &fatherInode, fatherInodeOffset,
+        &destInode, &destInodeOffset, destFilePath+size+1, REGULAR_TYPE);
+
+    if (ret == -1) {
+        printf("Failed to allocate inode.\n");
+        if (cond == 1)
+            *((char*)destFilePath + destlength - 1) = '/';
+        fclose(file);
+        return -1;
+    }
+
+    /**
+     * how to move the file to dir? 
+     **/
+    FILE * srcfile = fopen(srcFilePath, "r+");
+
+    fwrite((void *)srcfile, sizeof(FILE), 1, file);
 
     return 0;
+
 }
 
 int rm (const char *driver, const char *destFilePath) {
