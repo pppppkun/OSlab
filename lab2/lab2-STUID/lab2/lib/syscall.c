@@ -93,7 +93,7 @@ void printf(const char *format,...){
 				count = str2Str(string, buffer, MAX_BUFFER_SIZE, count);
 				break;
 			case 'c':
-				character= *(char *)(paraList += sizeof(char));
+				character= *(char *)(paraList += 4*sizeof(char));
 				buffer[count++] = character;
 				break;
 			default:
