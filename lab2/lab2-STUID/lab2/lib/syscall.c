@@ -1,5 +1,11 @@
 #include "lib.h"
 #include "types.h"
+
+#define _INTSIZEOF(n) ( (sizeof(n)+sizeof(int)-1) & ~ (sizeof(int)-1))
+#define va_start(ap,v) (ap = (va_list)&v+_INTSIZEOF(v))
+#define va_arg(ap,t) (*(t *)((ap+=_INTSIZEOF(t))-_INTSIZEOF(t)))
+#define va_end(ap) (ap=(va_list)0)
+typedef char* va_list;
 /*
  * io lib here
  * 库函数写在这
@@ -58,13 +64,14 @@ int32_t syscall(int num, uint32_t a1,uint32_t a2,
 int dec2Str(int decimal, char *buffer, int size, int count);
 int hex2Str(uint32_t hexadecimal, char *buffer, int size, int count);
 int str2Str(char *string, char *buffer, int size, int count);
-
+// format in the top stack
 void printf(const char *format,...){
 	int i=0; // format index
 	char buffer[MAX_BUFFER_SIZE];
 	int count=0; // buffer index
-	int index=0; // parameter index
-	void *paraList=(void*)&format; // address of format in stack
+//	int index=0; // parameter index
+//	void *paraList=(void*)&format; // address of format in stack
+	va_list paraList; va_start(paraList, format);
 	int state=0; // 0: legal character; 1: '%'; 2: illegal format
 	int decimal=0;
 	uint32_t hexadecimal=0;
@@ -73,10 +80,50 @@ void printf(const char *format,...){
 	while(format[i]!=0){
 		buffer[count]=format[i];
 		count++;
+		if(format[i]=='%')
+		{
+			state = 1;
+			i++;count--;
+			switch (format[i])
+			{
+			case 'd':
+				decimal = va_arg(paraList,int);
+				count = dec2Str(decimal, buffer, MAX_BUFFER_SIZE, count);
+				/* code */
+				break;
+				hexadecimal = va_arg(paraList,uint32_t);
+				count = hex2Str(hexadecimal, buffer, MAX_BUFFER_SIZE, count);
+				/* code */
+				break;
+			case 's':
+				string = va_arg(paraList,char*);
+				count = str2Str(string, buffer, MAX_BUFFER_SIZE, count);
+				/* code */
+				break;
+			case 'c':
+				character=va_arg(paraList,char);
+				buffer[count++] = character;
+				/* code */
+				break;
+
+			default:
+				if(state==1) state=3;
+				count++;
+				break;
+			}
+			state=0;
+		}
+		if(count==MAX_BUFFER_SIZE)
+		{
+			syscall(SYS_WRITE, STD_OUT, (uint32_t)buffer, (uint32_t)count, 0, 0);
+			count = 0;
+		}
+		i++;
 		//TODO in lab2
 	}
 	if(count!=0)
 		syscall(SYS_WRITE, STD_OUT, (uint32_t)buffer, (uint32_t)count, 0, 0);
+	va_end(paraList);
 }
 
 int dec2Str(int decimal, char *buffer, int size, int count) {

@@ -776,6 +776,10 @@ int cp (const char *driver, const char *srcFilePath, const char *destFilePath) {
      **/
     FILE * srcfile = fopen(srcFilePath, "r+");
     copyData(file, srcfile, &superBlock, &destInode, destInodeOffset);
+
+    printf("cp %s %s\n",srcFilePath, destFilePath);
+    printf("CP success.\n%d inodes and %d data blocks available.\n", superBlock.availInodeNum, superBlock.availBlockNum);
+
     return 0;
 
 }
