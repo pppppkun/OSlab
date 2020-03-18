@@ -742,6 +742,13 @@ int cp (const char *driver, const char *srcFilePath, const char *destFilePath) {
         return -1;
     }
 
+    ret = stringChrR(destFilePath, '/', &size);
+    if (ret == -1) {
+        printf("Incorrect destination file path.\n");
+        fclose(file);
+        return -1;
+    }
+
     destlength = stringLen(destFilePath);
     if(destFilePath[destlength - 1] == '/')
     {

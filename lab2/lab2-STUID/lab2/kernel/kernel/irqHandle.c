@@ -60,15 +60,7 @@ void timerHandle(struct TrapFrame *tf) {
 
 void keyboardHandle(struct TrapFrame *tf) {
 	//TODO in lab2
-	switch (tf->eax)
-	{
-	case 0:
-		putChar(getChar(getKeyCode()));
-		break;
-	
-	default:
-		break;
-	}
+	putChar(getChar(getKeyCode()));
 	return;
 }
 

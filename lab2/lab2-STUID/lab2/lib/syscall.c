@@ -1,11 +1,6 @@
 #include "lib.h"
 #include "types.h"
 
-#define _INTSIZEOF(n) ( (sizeof(n)+sizeof(int)-1) & ~ (sizeof(int)-1))
-#define va_start(ap,v) (ap = (va_list)&v+_INTSIZEOF(v))
-#define va_arg(ap,t) (*(t *)((ap+=_INTSIZEOF(t))-_INTSIZEOF(t)))
-#define va_end(ap) (ap=(va_list)0)
-typedef char* va_list;
 /*
  * io lib here
  * 库函数写在这
@@ -70,8 +65,7 @@ void printf(const char *format,...){
 	char buffer[MAX_BUFFER_SIZE];
 	int count=0; // buffer index
 //	int index=0; // parameter index
-//	void *paraList=(void*)&format; // address of format in stack
-	va_list paraList; va_start(paraList, format);
+	void *paraList=(void*)&format; // address of format in stack
 	int state=0; // 0: legal character; 1: '%'; 2: illegal format
 	int decimal=0;
 	uint32_t hexadecimal=0;
@@ -87,25 +81,21 @@ void printf(const char *format,...){
 			switch (format[i])
 			{
 			case 'd':
-				decimal = va_arg(paraList,int);
+				decimal = *(int *)( paraList += sizeof(int) );
 				count = dec2Str(decimal, buffer, MAX_BUFFER_SIZE, count);
-				/* code */
 				break;
-				hexadecimal = va_arg(paraList,uint32_t);
+			case 'x':
+				hexadecimal = *(uint32_t *)(paraList += sizeof(uint32_t));
 				count = hex2Str(hexadecimal, buffer, MAX_BUFFER_SIZE, count);
-				/* code */
 				break;
 			case 's':
-				string = va_arg(paraList,char*);
+				string = *(char**)(paraList += sizeof(char*));
 				count = str2Str(string, buffer, MAX_BUFFER_SIZE, count);
-				/* code */
 				break;
 			case 'c':
-				character=va_arg(paraList,char);
+				character= *(char *)(paraList += sizeof(char));
 				buffer[count++] = character;
-				/* code */
 				break;
-
 			default:
 				if(state==1) state=3;
 				count++;
@@ -123,7 +113,7 @@ void printf(const char *format,...){
 	}
 	if(count!=0)
 		syscall(SYS_WRITE, STD_OUT, (uint32_t)buffer, (uint32_t)count, 0, 0);
-	va_end(paraList);
+	paraList = (void*)(0);
 }
 
 int dec2Str(int decimal, char *buffer, int size, int count) {
