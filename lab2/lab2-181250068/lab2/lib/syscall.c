@@ -89,7 +89,7 @@ void printf(const char *format,...){
 				count = hex2Str(hexadecimal, buffer, MAX_BUFFER_SIZE, count);
 				break;
 			case 's':
-				string = *(char**)(paraList += sizeof(char*));
+				string = *(char**)(paraList += sizeof(char *));
 				count = str2Str(string, buffer, MAX_BUFFER_SIZE, count);
 				break;
 			case 'c':
