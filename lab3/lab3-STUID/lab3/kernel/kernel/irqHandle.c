@@ -80,6 +80,46 @@ void syscallHandle(struct TrapFrame *tf) {
 
 void timerHandle(struct TrapFrame *tf) {
 	// TODO in lab3
+	for(int i = 0;i<MAX_PCB_NUM;i++)
+	{
+		if(pcb[i].state==STATE_BLOCKED)
+		{
+			pcb[i].sleepTime-=1;
+			if(pcb[i].sleepTime==0) pcb[i].state=STATE_RUNNABLE;
+		}
+	}
+	int flag = 0;
+	pcb[current].timeCount+=1;
+	if(pcb[current].timeCount==MAX_TIME_COUNT)
+	{
+		pcb[current].state=STATE_RUNNABLE;
+		pcb[current].timeCount=0;
+		for(int i = 0;i<MAX_PCB_NUM;i++)
+		{
+			if(i!=current)
+			{
+				if(pcb[i].state==STATE_RUNNABLE)
+				{
+					flag = 1;
+					current=i;
+					break;
+				}
+			}
+		}
+		pcb[current].state=STATE_RUNNING;
+	}
+	uint32_t tmpStackTop = pcb[current].stackTop;
+ 	pcb[current].stackTop = pcb[current].prevStackTop;
+ 	tss.esp0 = (uint32_t)&(pcb[current].stackTop);
+ 	asm volatile("movl %0, %%esp"::"m"(tmpStackTop)); // switch kernel stack
+ 	asm volatile("popl %gs");
+ 	asm volatile("popl %fs");
+ 	asm volatile("popl %es");
+ 	asm volatile("popl %ds");
+ 	asm volatile("popal");
+ 	asm volatile("addl $8, %esp");
+ 	asm volatile("iret");
+	
 	return;
 }
 
@@ -145,6 +185,24 @@ void syscallPrint(struct TrapFrame *tf) {
 
 void syscallFork(struct TrapFrame *tf) {
 	// TODO in lab3
+	int i=0;
+	for(i = 0;i<MAX_PCB_NUM;i++)
+	{
+		if(pcb[i].state==STATE_DEAD) break;
+	}
+	if(i!=MAX_PCB_NUM)
+	{
+		//stack,state,timeCount,sleepTime
+		for(int j = 0;j<0x100000;j++)
+		{
+			*(uint8_t *)(j+(i+1)*0x100000) = *(uint8_t *)(j+(current+1)*0x100000);
+		}
+		pcb[i].state=STATE_RUNNABLE;
+		pcb[i].timeCount=pcb[current].timeCount;
+		pcb[i].sleepTime=pcb[current].sleepTime;
+		pcb[i].pid=i;
+	}
+	
 	return;
 }
 
@@ -156,11 +214,39 @@ void syscallExec(struct TrapFrame *tf) {
 
 void syscallSleep(struct TrapFrame *tf) {
 	// TODO in lab3
+	pcb[current].timeCount=tf->ecx;
+	pcb[current].state=STATE_BLOCKED;
+	timerHandle(&tf);
+
 	return;
 }
 
 void syscallExit(struct TrapFrame *tf) {
 	// TODO in lab3
+	pcb[current].state=STATE_DEAD;
+	for(int i = 0;i<MAX_PCB_NUM;i++)
+		{
+			if(i!=current)
+			{
+				if(pcb[i].state==STATE_RUNNABLE)
+				{
+					current=i;
+					break;
+				}
+			}
+		}
+	pcb[current].state=STATE_RUNNING;
+	uint32_t tmpStackTop = pcb[current].stackTop;
+ 	pcb[current].stackTop = pcb[current].prevStackTop;
+ 	tss.esp0 = (uint32_t)&(pcb[current].stackTop);
+ 	asm volatile("movl %0, %%esp"::"m"(tmpStackTop)); // switch kernel stack
+ 	asm volatile("popl %gs");
+ 	asm volatile("popl %fs");
+ 	asm volatile("popl %es");
+ 	asm volatile("popl %ds");
+ 	asm volatile("popal");
+ 	asm volatile("addl $8, %esp");
+ 	asm volatile("iret");
 	return;
 }
 
