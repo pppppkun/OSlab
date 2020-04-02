@@ -218,7 +218,7 @@ void syscallFork(struct TrapFrame *tf) {
 		pcb[i].regs.eip=pcb[current].regs.eip;
 		pcb[i].regs.cs=USEL(2*i+1);
 		pcb[i].regs.eflags=pcb[current].regs.eflags;
-		pcb[i].regs.ss=(2*i+2)<<3;
+		pcb[i].regs.ss=USEL(2*i+1);
 		pcb[i].regs.esp=pcb[current].regs.esp;
 	}
 	else pcb[current].regs.eax=-1;
@@ -229,10 +229,11 @@ void syscallFork(struct TrapFrame *tf) {
 void syscallExec(struct TrapFrame *tf) {
 	// TODO in lab3
 	// hint: ret = loadElf(tmp, (current + 1) * 0x100000, &entry);
+	putChar('e');putChar('x');putChar('e');putChar('c');
 	char *filename=(char *)tf->edx;
-	int sourceLen=tf->ebx;
 	uint32_t entry = 0;
 	loadElf(filename, (current+1)*0x100000, &entry);
+	tf->eip = entry;
 	return;
 }
 
@@ -249,16 +250,16 @@ void syscallExit(struct TrapFrame *tf) {
 	// TODO in lab3
 	pcb[current].state=STATE_DEAD;
 	for(int i = 0;i<MAX_PCB_NUM;i++)
+	{
+		if(i!=current)
 		{
-			if(i!=current)
+			if(pcb[i].state==STATE_RUNNABLE)
 			{
-				if(pcb[i].state==STATE_RUNNABLE)
-				{
-					current=i;
-					break;
-				}
+				current=i;
+				break;
 			}
 		}
+	}
 	pcb[current].state=STATE_RUNNING;
 	uint32_t tmpStackTop = pcb[current].stackTop;
  	pcb[current].stackTop = pcb[current].prevStackTop;

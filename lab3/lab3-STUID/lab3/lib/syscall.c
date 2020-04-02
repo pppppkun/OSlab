@@ -238,8 +238,7 @@ pid_t fork() {
 
 int exec(const char *filename, char * const argv[]) {
 	// TODO in lab3
-	uint32_t sourceLen = stringLen(filename);
-	return syscall(SYS_EXEC,(uint32_t)filename,sourceLen,(uint32_t)argv,0,0);
+	return syscall(SYS_EXEC,(uint32_t)filename,0,(uint32_t)argv,0,0);
 }
 
 int sleep(uint32_t time) {
@@ -250,13 +249,4 @@ int sleep(uint32_t time) {
 int exit() {
 	// TODO in lab3
 	return syscall(SYS_EXIT,0,0,0,0,0);
-}
-
-int stringLen (const char *string) {
-    int i = 0;
-    if (string == NULL)
-        return 0;
-    while (string[i] != 0)
-        i ++;
-    return i;
 }
