@@ -81,20 +81,22 @@ void syscallHandle(struct TrapFrame *tf) {
 
 void timerHandle(struct TrapFrame *tf) {
 	// TODO in lab3
-	for(int i = 0;i<MAX_PCB_NUM;i++)
+	uint32_t tmpStackTop;
+	for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
 	{
 		if(pcb[i].state==STATE_BLOCKED)
 		{
-			pcb[i].sleepTime-=1;
+			if(pcb[i].sleepTime>0) pcb[i].sleepTime--;
 			if(pcb[i].sleepTime==0) pcb[i].state=STATE_RUNNABLE;
 		}
 	}
-	pcb[current].timeCount+=1;
-	if(pcb[current].timeCount==MAX_TIME_COUNT)
+	pcb[current].timeCount++;
+	int j = current;
+	if(pcb[current].timeCount>=MAX_TIME_COUNT)
 	{
 		pcb[current].state=STATE_RUNNABLE;
 		pcb[current].timeCount=0;
-		for(int i = 0;i<MAX_PCB_NUM;i++)
+		for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
 		{
 			if(i!=current)
 			{
@@ -105,20 +107,20 @@ void timerHandle(struct TrapFrame *tf) {
 				}
 			}
 		}
+		if(j==current) return;
 		pcb[current].state=STATE_RUNNING;
+		tmpStackTop = pcb[current].stackTop;
+		pcb[current].stackTop = pcb[current].prevStackTop;
+		tss.esp0 = (uint32_t)&(pcb[current].stackTop);
+		asm volatile("movl %0, %%esp"::"m"(tmpStackTop)); // switch kernel stack
+		asm volatile("popl %gs");
+		asm volatile("popl %fs");
+		asm volatile("popl %es");
+		asm volatile("popl %ds");
+		asm volatile("popal");
+		asm volatile("addl $8, %esp");
+		asm volatile("iret");
 	}
-	uint32_t tmpStackTop = pcb[current].stackTop;
- 	pcb[current].stackTop = pcb[current].prevStackTop;
- 	tss.esp0 = (uint32_t)&(pcb[current].stackTop);
- 	asm volatile("movl %0, %%esp"::"m"(tmpStackTop)); // switch kernel stack
- 	asm volatile("popl %gs");
- 	asm volatile("popl %fs");
- 	asm volatile("popl %es");
- 	asm volatile("popl %ds");
- 	asm volatile("popal");
- 	asm volatile("addl $8, %esp");
- 	asm volatile("iret");
-	
 	return;
 }
 
@@ -197,10 +199,10 @@ void syscallFork(struct TrapFrame *tf) {
 			*(uint8_t *)(j+(i+1)*0x100000) = *(uint8_t *)(j+(current+1)*0x100000);
 		}
 		pcb[i].state=STATE_RUNNABLE;
-		pcb[1].stackTop = (uint32_t)&(pcb[i].regs);
-		pcb[1].prevStackTop = (uint32_t)&(pcb[i].stackTop);
-		pcb[i].timeCount=pcb[current].timeCount;
-		pcb[i].sleepTime=pcb[current].sleepTime;
+		pcb[i].stackTop = (uint32_t)&(pcb[i].regs);
+		pcb[i].prevStackTop = (uint32_t)&(pcb[i].stackTop);
+		pcb[i].timeCount=pcb[i].timeCount;
+		pcb[i].sleepTime=pcb[i].sleepTime;
 		pcb[i].pid=i;
 		//gs,fs,es,ds,edi,esi,ebp,xxx,ebx,edx,ecx,eax,irq,error,eip,cs,eflags,esp,ss
 		pcb[i].regs.gs=pcb[current].regs.gs;
@@ -218,7 +220,7 @@ void syscallFork(struct TrapFrame *tf) {
 		pcb[i].regs.eip=pcb[current].regs.eip;
 		pcb[i].regs.cs=USEL(2*i+1);
 		pcb[i].regs.eflags=pcb[current].regs.eflags;
-		pcb[i].regs.ss=USEL(2*i+1);
+		pcb[i].regs.ss=USEL(2*i+2);
 		pcb[i].regs.esp=pcb[current].regs.esp;
 	}
 	else pcb[current].regs.eax=-1;
@@ -230,48 +232,31 @@ void syscallExec(struct TrapFrame *tf) {
 	// TODO in lab3
 	// hint: ret = loadElf(tmp, (current + 1) * 0x100000, &entry);
 	putChar('e');putChar('x');putChar('e');putChar('c');
-	char *filename=(char *)tf->edx;
+	char *filename=(char *)(tf->ecx);
+	for(int i = 0;;i++)
+	{
+		if('A'<=filename[i]&&filename[i]<='z') putChar(filename[i]);
+	}
 	uint32_t entry = 0;
 	loadElf(filename, (current+1)*0x100000, &entry);
+	putChar('o');putChar('u');putChar('t');
 	tf->eip = entry;
 	return;
 }
 
 void syscallSleep(struct TrapFrame *tf) {
 	// TODO in lab3
+	if(tf->ecx == 0) return;
 	pcb[current].timeCount=tf->ecx;
 	pcb[current].state=STATE_BLOCKED;
-	timerHandle(tf);
-
+	asm volatile("int $0x20");
 	return;
 }
 
 void syscallExit(struct TrapFrame *tf) {
 	// TODO in lab3
 	pcb[current].state=STATE_DEAD;
-	for(int i = 0;i<MAX_PCB_NUM;i++)
-	{
-		if(i!=current)
-		{
-			if(pcb[i].state==STATE_RUNNABLE)
-			{
-				current=i;
-				break;
-			}
-		}
-	}
-	pcb[current].state=STATE_RUNNING;
-	uint32_t tmpStackTop = pcb[current].stackTop;
- 	pcb[current].stackTop = pcb[current].prevStackTop;
- 	tss.esp0 = (uint32_t)&(pcb[current].stackTop);
- 	asm volatile("movl %0, %%esp"::"m"(tmpStackTop)); // switch kernel stack
- 	asm volatile("popl %gs");
- 	asm volatile("popl %fs");
- 	asm volatile("popl %es");
- 	asm volatile("popl %ds");
- 	asm volatile("popal");
- 	asm volatile("addl $8, %esp");
- 	asm volatile("iret");
+	asm volatile("int $0x20");
 	return;
 }
 

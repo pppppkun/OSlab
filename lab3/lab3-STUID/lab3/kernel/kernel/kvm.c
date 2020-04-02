@@ -106,7 +106,6 @@ int loadElf(const char *filename, uint32_t physAddr, uint32_t *entry) {
 		}
 		programheader = *(uint32_t *)(programheader + filesz);
 	}
-
 	return 0;
 }
 
