@@ -75,13 +75,17 @@ int loadElf(const char *filename, uint32_t physAddr, uint32_t *entry) {
 	uint32_t elf = physAddr;
 	Inode inode;
 	int inodeOffset = 0;
-	readInode(&sBlock,&inode,&inodeOffset,filename);
+	int ret = 0;
+	ret = readInode(&sBlock,&inode,&inodeOffset,filename);
+	if(inode.type!=REGULAR_TYPE) return -1;
+	if(ret == -1) return -1;
 	for (i = 0; i < inode.blockCount; i++) {
-		readBlock(&sBlock, &inode, i, (uint8_t *)(elf + i * sBlock.blockSize));
+		ret = readBlock(&sBlock, &inode, i, (uint8_t *)(elf + i * sBlock.blockSize));
+		if(ret == -1) return -1;
 	}
 	entry = (uint32_t *)((struct ELFHeader *)elf)->entry;
 	phoff = ((struct ELFHeader *)elf)->phoff;
-	uint32_t programheader = *(uint32_t *)(elf+phoff);
+	struct ProgramHeader * programheader = (struct ProgramHeader *)(elf+phoff);
 	
 	uint32_t off = 0;
 	uint32_t vaddr = 0;
@@ -91,20 +95,22 @@ int loadElf(const char *filename, uint32_t physAddr, uint32_t *entry) {
 
 	for(i = 0;i<((struct ELFHeader *)elf)->phnum;i++)
 	{
-		off = ((struct ProgramHeader *)programheader)->off;
-		vaddr = ((struct ProgramHeader *)programheader)->vaddr;
-//		paddr = ((struct ProgramHeader *)programheader)->paddr;
-		filesz = ((struct ProgramHeader *)programheader)->filesz;
-		memsz = ((struct ProgramHeader *)programheader)->memsz;
-		for(int j = 0;j<memsz;j++)
+		off = programheader->off;
+		vaddr = programheader->vaddr;
+		filesz = programheader->filesz;
+		memsz = programheader->memsz;
+		if(programheader->type==0x1)
 		{
-			*(uint8_t *)(physAddr + vaddr + j) = *(uint8_t *)(elf + j + off);
+			for(int j = 0;j<memsz;j++)
+			{
+				*(uint8_t *)(physAddr + vaddr + j) = *(uint8_t *)(elf + j + off);
+			}
+			for(int j = filesz;j<memsz;j++)
+			{
+				*(uint8_t *)(physAddr + vaddr + j) = 0;
+			}
 		}
-		for(int j = filesz;j<memsz;j++)
-		{
-			*(uint8_t *)(physAddr + vaddr + j) = *(uint8_t *)(0);
-		}
-		programheader = *(uint32_t *)(programheader + filesz);
+		programheader = (struct ProgramHeader *)((uint32_t)programheader + filesz);
 	}
 	return 0;
 }

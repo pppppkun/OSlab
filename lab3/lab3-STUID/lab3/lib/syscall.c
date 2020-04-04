@@ -238,7 +238,16 @@ pid_t fork() {
 
 int exec(const char *filename, char * const argv[]) {
 	// TODO in lab3
-	return syscall(SYS_EXEC,(uint32_t)filename,(uint32_t)argv,0,0,0);
+	int size = 0;
+	for(int i = 0;;i++)
+	{
+		if(filename[i]=='\0')
+		{
+			size=i+1;
+			break;
+		}
+	}
+	return syscall(SYS_EXEC,(uint32_t)filename,size,(uint32_t)argv,0,0);
 }
 
 int sleep(uint32_t time) {

@@ -82,7 +82,7 @@ void syscallHandle(struct TrapFrame *tf) {
 void timerHandle(struct TrapFrame *tf) {
 	// TODO in lab3
 	uint32_t tmpStackTop;
-	for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
+	for(int i = 0;i<MAX_PCB_NUM;i++)
 	{
 		if(pcb[i].state==STATE_BLOCKED)
 		{
@@ -94,7 +94,7 @@ void timerHandle(struct TrapFrame *tf) {
 	int j = current;
 	if(pcb[current].timeCount>=MAX_TIME_COUNT)
 	{
-		pcb[current].state=STATE_RUNNABLE;
+		if(pcb[current].state!=STATE_DEAD) pcb[current].state=STATE_RUNNABLE;
 		pcb[current].timeCount=0;
 		for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
 		{
@@ -107,7 +107,10 @@ void timerHandle(struct TrapFrame *tf) {
 				}
 			}
 		}
-		if(j==current) return;
+		if(j==current)
+		{
+			current=0;
+		}
 		pcb[current].state=STATE_RUNNING;
 		tmpStackTop = pcb[current].stackTop;
 		pcb[current].stackTop = pcb[current].prevStackTop;
@@ -194,10 +197,13 @@ void syscallFork(struct TrapFrame *tf) {
 	if(i!=MAX_PCB_NUM)
 	{
 		//stack,state,timeCount,sleepTime
+		//enableInterrupt();
 		for(int j = 0;j<0x100000;j++)
 		{
 			*(uint8_t *)(j+(i+1)*0x100000) = *(uint8_t *)(j+(current+1)*0x100000);
+			//asm volatile("int $0x20");
 		}
+		//disableInterrupt();
 		pcb[i].state=STATE_RUNNABLE;
 		pcb[i].stackTop = (uint32_t)&(pcb[i].regs);
 		pcb[i].prevStackTop = (uint32_t)&(pcb[i].stackTop);
@@ -227,21 +233,31 @@ void syscallFork(struct TrapFrame *tf) {
 	
 	return;
 }
-
+//ecx = filename edx = size ebx = args 
 void syscallExec(struct TrapFrame *tf) {
 	// TODO in lab3
 	// hint: ret = loadElf(tmp, (current + 1) * 0x100000, &entry);
-	putChar('e');putChar('x');putChar('e');putChar('c');
-	char *filename=(char *)(tf->ecx);
-	for(int i = 0;;i++)
-	{
-		if('A'<=filename[i]&&filename[i]<='z') putChar(filename[i]);
-	}
+	int sel = tf->ds; //TODO segment selector for user data, need further modification
+	char *str = (char *)tf->ecx;
+	int size = tf->edx;
+	asm volatile("movw %0, %%es"::"m"(sel));
+	char filename[size];
+	for(int i = 0;i<size;i++) asm volatile("movb %%es:(%1), %0":"=r"(filename[i]):"r"(str + i));
 	uint32_t entry = 0;
-	loadElf(filename, (current+1)*0x100000, &entry);
-	putChar('o');putChar('u');putChar('t');
-	tf->eip = entry;
-	return;
+//	char* afilename="/usr/print";
+	int ret = loadElf(filename, (current+1)*0x100000, &entry);
+	if(ret==-1)
+	{
+		tf->error=-1;
+		pcb[current].regs.error=-1;
+		return;
+	}
+	else
+	{
+		pcb[current].regs.eip=entry;
+		return;
+	}
+	
 }
 
 void syscallSleep(struct TrapFrame *tf) {
@@ -256,6 +272,7 @@ void syscallSleep(struct TrapFrame *tf) {
 void syscallExit(struct TrapFrame *tf) {
 	// TODO in lab3
 	pcb[current].state=STATE_DEAD;
+	pcb[current].timeCount = MAX_TIME_COUNT;
 	asm volatile("int $0x20");
 	return;
 }
