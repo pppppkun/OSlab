@@ -12,7 +12,6 @@ extern int displayCol;
 extern uint32_t keyBuffer[MAX_KEYBUFFER_SIZE];
 extern int bufferHead;
 extern int bufferTail;
-
 void syscallHandle(struct TrapFrame *tf);
 void syscallWrite(struct TrapFrame *tf);
 void syscallPrint(struct TrapFrame *tf);
@@ -91,10 +90,10 @@ void timerHandle(struct TrapFrame *tf) {
 		}
 	}
 	pcb[current].timeCount++;
-	int j = current;
-	if(pcb[current].timeCount>=MAX_TIME_COUNT)
+//	int j = current;
+	if(pcb[current].timeCount>=MAX_TIME_COUNT||pcb[current].state==STATE_BLOCKED)
 	{
-		if(pcb[current].state!=STATE_DEAD) pcb[current].state=STATE_RUNNABLE;
+		if(pcb[current].state==STATE_RUNNING) pcb[current].state=STATE_RUNNABLE;
 		pcb[current].timeCount=0;
 		for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
 		{
@@ -107,10 +106,8 @@ void timerHandle(struct TrapFrame *tf) {
 				}
 			}
 		}
-		if(j==current)
-		{
-			current=0;
-		}
+
+
 		pcb[current].state=STATE_RUNNING;
 		tmpStackTop = pcb[current].stackTop;
 		pcb[current].stackTop = pcb[current].prevStackTop;
@@ -263,7 +260,7 @@ void syscallExec(struct TrapFrame *tf) {
 void syscallSleep(struct TrapFrame *tf) {
 	// TODO in lab3
 	if(tf->ecx == 0) return;
-	pcb[current].timeCount=tf->ecx;
+	pcb[current].sleepTime=tf->ecx;
 	pcb[current].state=STATE_BLOCKED;
 	asm volatile("int $0x20");
 	return;
