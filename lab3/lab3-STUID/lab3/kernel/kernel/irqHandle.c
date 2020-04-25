@@ -105,7 +105,6 @@ void timerHandle(struct TrapFrame *tf) {
 			}
 		}
 
-		putString("current:");putInt(current);
 		pcb[current].state=STATE_RUNNING;
 		tmpStackTop = pcb[current].stackTop;
 		pcb[current].stackTop = pcb[current].prevStackTop;
@@ -194,17 +193,10 @@ void syscallFork(struct TrapFrame *tf) {
 	{
 		//stack,state,timeCount,sleepTime
 		enableInterrupt();
-		int k = 1;
 		for(int j = 0;j<0x100000;j++)
 		{
 			*(uint8_t *)(j+(i+1)*0x100000) = *(uint8_t *)(j+(current+1)*0x100000);
-			if(k==1&&j==10000)
-			{
-				putString("begin int 20");
-				asm volatile("int $0x20");
-				putString("end int 20");
-				k = 0;
-			}
+			asm volatile("int $0x20");
 		}
 		disableInterrupt();
 		pcb[i].state=STATE_RUNNABLE;
