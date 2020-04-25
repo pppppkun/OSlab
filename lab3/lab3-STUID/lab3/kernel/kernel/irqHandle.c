@@ -95,19 +95,17 @@ void timerHandle(struct TrapFrame *tf) {
 	{
 		if(pcb[current].state==STATE_RUNNING) pcb[current].state=STATE_RUNNABLE;
 		pcb[current].timeCount=0;
+
 		for(int i = (current + 1) % MAX_PCB_NUM;i!=current;i=(i + 1) % MAX_PCB_NUM)
 		{
-			if(i!=current)
+			if(pcb[i].state==STATE_RUNNABLE)
 			{
-				if(pcb[i].state==STATE_RUNNABLE)
-				{
-					current=i;
-					break;
-				}
+				current=i;
+				break;
 			}
 		}
 
-
+		putString("current:");putInt(current);
 		pcb[current].state=STATE_RUNNING;
 		tmpStackTop = pcb[current].stackTop;
 		pcb[current].stackTop = pcb[current].prevStackTop;
@@ -178,6 +176,7 @@ void syscallPrint(struct TrapFrame *tf) {
 				}
 			}
 		}
+		//asm volatile("int $0x20");
 	}
 	
 	updateCursor(displayRow, displayCol);
@@ -194,13 +193,20 @@ void syscallFork(struct TrapFrame *tf) {
 	if(i!=MAX_PCB_NUM)
 	{
 		//stack,state,timeCount,sleepTime
-		//enableInterrupt();
+		enableInterrupt();
+		int k = 1;
 		for(int j = 0;j<0x100000;j++)
 		{
 			*(uint8_t *)(j+(i+1)*0x100000) = *(uint8_t *)(j+(current+1)*0x100000);
-			//asm volatile("int $0x20");
+			if(k==1&&j==10000)
+			{
+				putString("begin int 20");
+				asm volatile("int $0x20");
+				putString("end int 20");
+				k = 0;
+			}
 		}
-		//disableInterrupt();
+		disableInterrupt();
 		pcb[i].state=STATE_RUNNABLE;
 		pcb[i].stackTop = (uint32_t)&(pcb[i].regs);
 		pcb[i].prevStackTop = (uint32_t)&(pcb[i].stackTop);
@@ -208,9 +214,9 @@ void syscallFork(struct TrapFrame *tf) {
 		pcb[i].sleepTime=pcb[i].sleepTime;
 		pcb[i].pid=i;
 		//gs,fs,es,ds,edi,esi,ebp,xxx,ebx,edx,ecx,eax,irq,error,eip,cs,eflags,esp,ss
-		pcb[i].regs.gs=pcb[current].regs.gs;
-		pcb[i].regs.fs=pcb[current].regs.fs;
-		pcb[i].regs.es=pcb[current].regs.es;
+		pcb[i].regs.gs=USEL(2*i+2);
+		pcb[i].regs.fs=USEL(2*i+2);
+		pcb[i].regs.es=USEL(2*i+2);
 		pcb[i].regs.ds=USEL(2*i+2);
 		pcb[i].regs.edi=pcb[current].regs.edi;
 		pcb[i].regs.esi=pcb[current].regs.esi;
