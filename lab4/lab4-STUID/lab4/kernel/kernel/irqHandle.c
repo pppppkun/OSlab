@@ -411,7 +411,7 @@ void syscallFork(struct TrapFrame *tf) {
 	}
 	if (i != MAX_PCB_NUM) {
 		pcb[i].state = STATE_PREPARING;
-
+		putInt(i);
 		enableInterrupt();
 		for (j = 0; j < 0x100000; j++) {
 			*(uint8_t *)(j + (i + 1) * 0x100000) = *(uint8_t *)(j + (current + 1) * 0x100000);

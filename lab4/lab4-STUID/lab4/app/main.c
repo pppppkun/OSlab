@@ -42,7 +42,7 @@ int uEntry(void)
 	printf("scanf seccess!\n");
 	return 0; */
 
-	int i = 4;
+/*	int i = 4;
 	int ret = 0;
 	int value = 2;
 	sem_t sem;
@@ -82,7 +82,7 @@ int uEntry(void)
 		exit();
 	}
 
-	return 0;
+	return 0;*/
 
 	char ch;
 	printf("Input: 1 for bounded_buffer\n       2 for philosopher\n       3 for reader_writer\n");
