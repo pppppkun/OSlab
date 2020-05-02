@@ -556,6 +556,7 @@ void syscallSemWait(struct TrapFrame *tf) {
 		(pcb[current].blocked.next)->prev = &(pcb[current].blocked);
 		pcb[current].state=STATE_BLOCKED;
 		pcb[current].sleepTime=-1;
+		putInt(current);
 		asm volatile("int $0x20");
 	}
 	pcb[current].regs.eax=0;
