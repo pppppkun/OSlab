@@ -176,42 +176,8 @@ void timerHandle(struct TrapFrame *tf) {
 
 void keyboardHandle(struct TrapFrame *tf) {
 	// TODO in lab4
-	uint32_t KeyCode = getKeyCode();
-//	char character = getChar(KeyCode);
-	keyBuffer[bufferTail] = KeyCode;
+	keyBuffer[bufferTail] = getKeyCode();
 	bufferTail = (bufferTail+1)%MAX_KEYBUFFER_SIZE;
-//	uint16_t data = 0;
-//	int pos = 0;
-
-/*	if(character!=0)
-	{
-		if (character == '\n') {
-			displayRow++;
-			displayCol = 0;
-			if (displayRow == 25){
-				displayRow = 24;
-				displayCol = 0;
-				scrollScreen();
-			}
-		}
-		else {
-			data = character | (0x0c << 8);
-			pos = (80 * displayRow + displayCol) * 2;
-			asm volatile("movw %0, (%1)"::"r"(data),"r"(pos + 0xb8000));
-			displayCol++;
-			if (displayCol == 80){
-				displayRow++;
-				displayCol = 0;
-				if (displayRow == 25){
-				displayRow = 24;
-						displayCol = 0;
-					scrollScreen();
-				}
-			}
-		}
-		updateCursor(displayRow, displayCol);
-	} */
-
 	if(dev[STD_IN].value < 0)
 	{
 		dev[STD_IN].value = 0;
@@ -358,11 +324,37 @@ void syscallReadStdIn(struct TrapFrame *tf) {
 			if(bufferHead!=bufferTail)
 			{
 				character = getChar(keyBuffer[bufferHead]);
+
 				bufferHead = (bufferHead+1) % MAX_KEYBUFFER_SIZE;
 				if(character!=0)
 				{
 					asm volatile("movb %0, %%es:(%1)"::"r"(character),"r"(str + i));
 					putChar(character);
+					if (character == '\n') {
+						displayRow++;
+						displayCol = 0;
+						if (displayRow == 25){
+							displayRow = 24;
+							displayCol = 0;
+							scrollScreen();
+						}
+					}
+					else {
+						uint16_t data = character | (0x0c << 8);
+						int pos = (80 * displayRow + displayCol) * 2;
+						asm volatile("movw %0, (%1)"::"r"(data),"r"(pos + 0xb8000));
+						displayCol++;
+						if (displayCol == 80){
+							displayRow++;
+							displayCol = 0;
+							if (displayRow == 25){
+								displayRow = 24;
+								displayCol = 0;
+								scrollScreen();
+								}
+							}
+						}
+					updateCursor(displayRow, displayCol);
 					i++;
 				}
 			}
