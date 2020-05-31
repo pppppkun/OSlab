@@ -631,3 +631,8 @@ int sem_destroy(sem_t *sem) {
 int getpid() {
 	return syscall(SYS_GETPID, 0, 0, 0, 0, 0);
 }
+
+int rand(){
+	return syscall(SYS_RAND,0,0,0,0,0);
+}
+

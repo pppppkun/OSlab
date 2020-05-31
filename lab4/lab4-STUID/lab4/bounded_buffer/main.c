@@ -7,30 +7,30 @@ int getPoint = 0;
 void Deposit(int id, sem_t *eb, sem_t *fb, sem_t *mutex)
 {
 	sem_wait(eb);
-	sleep(128);
+	sleep(rand());
 	sem_wait(mutex);
-	sleep(128);
+	sleep(rand());
 	buffer[setPoint] = 1;
 	setPoint = (setPoint + 1) % N;
 	printf("Producer %d: produce\n", id);
-	sleep(128);
+	sleep(rand());
 	sem_post(mutex);
-	sleep(128);
+	sleep(rand());
 	sem_post(fb);
 }
 
 void Remove(sem_t *eb, sem_t *fb, sem_t *mutex)
 {
 	sem_wait(fb);
-	sleep(128);
+	sleep(rand());
 	sem_wait(mutex);
-	sleep(128);
+	sleep(rand());
 	buffer[getPoint] = 0;
 	getPoint = (getPoint + 1) % N;
 	printf("Consumer : consume\n");
-	sleep(128);
+	sleep(rand());
 	sem_post(mutex);
-	sleep(128);
+	sleep(rand());
 	sem_post(eb);
 }
 

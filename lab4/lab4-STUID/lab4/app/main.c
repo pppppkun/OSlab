@@ -83,7 +83,6 @@ int uEntry(void)
 	}
 
 	return 0;*/
-
 	char ch;
 	printf("Input: 1 for bounded_buffer\n       2 for philosopher\n       3 for reader_writer\n");
 	scanf("%c", &ch);

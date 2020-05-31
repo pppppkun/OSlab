@@ -6,7 +6,7 @@
 void writer(int id, sem_t *wm)
 {
 	sem_wait(wm);
-	sleep(64);
+	sleep(rand());
 	printf("Writer %d: write\n", id);
 	sem_post(wm);
 }
@@ -15,7 +15,7 @@ void writer(int id, sem_t *wm)
 void reader(int id, sem_t *wm, sem_t *cm, int Rc)
 {
 	sem_wait(cm);
-	sleep(64);
+	sleep(rand());
 	read(SH_MEM, (uint8_t*)&Rc, 4, 0);
 	if(Rc == 0)
 	{
@@ -23,11 +23,11 @@ void reader(int id, sem_t *wm, sem_t *cm, int Rc)
 	}
 	++(Rc);
 	write(SH_MEM, (uint8_t *)&Rc, 4, 0);
-	sleep(64);
-	sem_post(cm);
 	printf("Reader %d: read, total %d reader\n", id, Rc);
+	sem_post(cm);
+	//READ 
+	sleep(rand());
 	sem_wait(cm);
-	sleep(64);
 	read(SH_MEM, (uint8_t*)&Rc, 4, 0);
 	--(Rc);
 	if(Rc == 0)
@@ -35,7 +35,7 @@ void reader(int id, sem_t *wm, sem_t *cm, int Rc)
 		sem_post(wm);
 	}
 	write(SH_MEM, (uint8_t *)&Rc, 4, 0);
-	sleep(64);
+	sleep(rand());
 	sem_post(cm);
 }
 

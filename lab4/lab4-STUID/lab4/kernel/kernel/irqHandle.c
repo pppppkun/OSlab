@@ -9,6 +9,7 @@
 #define SYS_READ 5
 #define SYS_SEM 6
 #define SYS_GETPID 7
+#define SYS_RAND 8
 
 #define STD_OUT 0
 #define STD_IN 1
@@ -44,6 +45,7 @@ void syscallSleep(struct TrapFrame *tf);
 void syscallExit(struct TrapFrame *tf);
 void syscallSem(struct TrapFrame *tf);
 void syscallGetPid(struct TrapFrame *tf);
+void syscallRand(struct TrapFrame *tf);
 
 void syscallWriteStdOut(struct TrapFrame *tf);
 void syscallReadStdIn(struct TrapFrame *tf);
@@ -118,6 +120,9 @@ void syscallHandle(struct TrapFrame *tf) {
 		case SYS_GETPID:
 			syscallGetPid(tf);
 			break; // for SYS_GETPID
+		case SYS_RAND:
+			syscallRand(tf);
+			break;
 		default:break;
 	}
 }
@@ -403,7 +408,6 @@ void syscallFork(struct TrapFrame *tf) {
 	}
 	if (i != MAX_PCB_NUM) {
 		pcb[i].state = STATE_PREPARING;
-		putInt(i);
 		enableInterrupt();
 		for (j = 0; j < 0x100000; j++) {
 			*(uint8_t *)(j + (i + 1) * 0x100000) = *(uint8_t *)(j + (current + 1) * 0x100000);
@@ -548,7 +552,6 @@ void syscallSemWait(struct TrapFrame *tf) {
 		(pcb[current].blocked.next)->prev = &(pcb[current].blocked);
 		pcb[current].state=STATE_BLOCKED;
 		pcb[current].sleepTime=-1;
-		putInt(current);
 		asm volatile("int $0x20");
 	}
 	pcb[current].regs.eax=0;
@@ -595,6 +598,13 @@ void syscallSemDestroy(struct TrapFrame *tf) {
 
 void syscallGetPid(struct TrapFrame *tf) {
 	pcb[current].regs.eax = current;
+	return;
+}
+
+void syscallRand(struct TrapFrame *tf)
+{
+	pcb[current].regs.eax = inByte(0x40);
+	putInt(pcb[current].regs.eax);
 	return;
 }
 

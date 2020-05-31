@@ -8,27 +8,27 @@ void philosopher(int i)
 	while(1)
 	{
 		printf("Philosopher %d: think\n", i);
-		sleep(128);
+		sleep(rand());
 		if(i%2==0)
 		{
 			sem_wait(&fork_[i]);
-			sleep(128);
+			sleep(rand());
 			sem_wait(&fork_[(i+1)%N]);
-			sleep(128);
+			sleep(rand());
 		}
 		else
 		{
 			sem_wait(&fork_[(i+1)%N]);
-			sleep(128);
+			sleep(rand());
 			sem_wait(&fork_[i]);
-			sleep(128);
+			sleep(rand());
 		}
 		printf("Philosopher %d: eat\n", i);
-		sleep(128);
+		sleep(rand());
 		sem_post(&fork_[i]);
-		sleep(128);
+		sleep(rand());
 		sem_post(&fork_[(i+1)%N]);
-		sleep(128);
+		sleep(rand());
 	}
 }
 
