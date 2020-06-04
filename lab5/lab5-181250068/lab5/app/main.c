@@ -3,6 +3,28 @@
 
 int uEntry(void)
 {
+	int fd=0;
+	char tmp = 0;
+	printf("pkun:/# \n");
+	ls("/");
+	printf("pkun:/boot/# \n");
+	ls("/boot/");
+	printf("pkun:/dev/# \n");
+	ls("/dev/");
+	printf("pkun:/usr/# \n");
+	ls("/usr/");
+	printf("create /usr/test and write alphabets to it\n");
+	fd = open("/usr/test", O_READ | O_CREATE);
+	for(int i = 0;i<512;i++){
+		tmp = (char)(i%26+'A');
+		write(fd,(uint8_t*)&tmp, 1);
+	}
+	close(fd);
+	printf("pkun:/usr/# \n");
+	ls("/usr/");
+	cat("/usr/test");
+	exit();
+	return 0;
 	/*	int dec = 0;
 	int hex = 0;
 	char str[6];
@@ -83,7 +105,7 @@ int uEntry(void)
 	}
 
 	return 0;*/
-	char ch;
+	/*char ch;
 	printf("Input: 1 for bounded_buffer\n       2 for philosopher\n       3 for reader_writer\n");
 	scanf("%c", &ch);
 	switch (ch)
@@ -101,5 +123,5 @@ int uEntry(void)
 		break;
 	}
 	exit();
-	return 0;
+	return 0;*/
 }

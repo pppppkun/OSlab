@@ -84,4 +84,11 @@ union DirEntry {
 };
 typedef union DirEntry DirEntry;
 
+struct File{
+    int state;
+    int inodeOffset;
+    int offset;
+    int flags;
+};
+typedef struct File File;
 #endif

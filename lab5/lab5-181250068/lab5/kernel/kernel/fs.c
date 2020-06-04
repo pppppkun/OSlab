@@ -97,3 +97,81 @@ int readInode(SuperBlock *superBlock, Inode *destInode, int *inodeOffset, const 
     }
     return 0;
 }
+
+int freeInode (SuperBlock *superBlock,
+               Inode *fatherInode,
+               int fatherInodeOffset,
+               Inode *destInode,
+               int *destInodeOffset,
+               const char *destFilename,
+               int destFiletype)
+{
+    return 0;
+}
+
+int getDirEntry (SuperBlock *superBlock,
+                 Inode *inode,
+                 int dirIndex,
+                 DirEntry *destDirEntry)
+{
+    int i = 0;
+    int j = 0;
+    int ret = 0;
+    int dirCount = 0;
+    DirEntry *dirEntry = NULL;
+    uint8_t buffer[superBlock->blockSize];
+    for (i = 0; i < inode->blockCount; i++) {
+        ret = readBlock(superBlock, inode, i, buffer);
+        if (ret == -1)
+            return -1;
+        dirEntry = (DirEntry *)buffer;
+        for (j = 0; j < superBlock->blockSize / sizeof(DirEntry); j ++) {
+            if (dirEntry[j].inode != 0) {
+                if (dirCount == dirIndex)
+                    break;
+                else
+                    dirCount ++;
+            }
+        }
+        if (j < superBlock->blockSize / sizeof(DirEntry))
+            break;
+    }
+    if (i == inode->blockCount)
+        return -1;
+    else {
+        destDirEntry->inode = dirEntry[j].inode;
+        stringCpy(dirEntry[j].name, destDirEntry->name, NAME_LENGTH);
+        return 0;
+    }
+}
+
+void ls(char *path, char *tmp, int *len){
+    Inode inode;
+    int inodeOffset = 0;
+    int dirIndex = 0;
+    DirEntry dirEntry;
+    SuperBlock sb;
+    int ret=0;
+    ret = readSuperBlock(&sb);
+    if(ret == -1){
+        return;
+    }
+    ret = readInode(&sb, &inode, &inodeOffset, path);
+    if(ret == -1){
+        return;
+    }
+    if(inode.type != DIRECTORY_TYPE){
+        return;
+    }
+    int i = 0;
+    while (getDirEntry(&sb, &inode, dirIndex, &dirEntry) == 0) {
+        dirIndex ++;
+        int j = 0;
+        while(dirEntry.name[j]!='\0'){
+            tmp[i++] = dirEntry.name[j++];
+        }
+        tmp[i++]=' ';
+    }
+    tmp[i]='\n';
+    *len = i+1;
+}

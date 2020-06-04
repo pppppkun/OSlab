@@ -12,6 +12,12 @@
 #define SYS_SEM 6
 #define SYS_GETPID 7
 #define SYS_RAND 8
+#define SYS_OPEN 9
+#define SYS_LSEEK 10
+#define SYS_CLOSE 11
+#define SYS_REMOVE 12
+#define SYS_LS 13
+#define SYS_CAT 14
 
 #define STD_OUT 0
 #define STD_IN 1
@@ -21,6 +27,15 @@
 #define SEM_WAIT 1
 #define SEM_POST 2
 #define SEM_DESTROY 3
+
+#define O_WRITE 0x01
+#define O_READ 0x02
+#define O_CREATE 0x04
+#define O_DIRECTORY 0x08
+
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
 
 #define MAX_BUFFER_SIZE 256
 
@@ -51,5 +66,17 @@ int sem_destroy(sem_t *sem);
 int getpid();
 
 int rand();
+
+int open(char *path, int flags);
+
+int lseek(int fd, int offset, int whence);
+
+int close(int fd);
+
+int remove(char *path);
+
+void ls(char *path);
+
+void cat(char *path);
 
 #endif

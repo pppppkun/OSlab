@@ -636,3 +636,26 @@ int rand(){
 	return syscall(SYS_RAND,0,0,0,0,0);
 }
 
+int open(char *path, int flags){
+	return syscall(SYS_OPEN, (uint32_t)path, flags, 0, 0, 0);
+}
+
+int lseek(int fd, int offset, int whence){
+	return syscall(SYS_LSEEK, fd, offset, whence, 0, 0);
+}
+
+int close(int fd){
+	return syscall(SYS_CLOSE, fd, 0, 0, 0, 0);
+}
+
+int remove(char *path){
+	return syscall(SYS_REMOVE, (uint32_t)path, 0, 0, 0, 0);
+}
+
+void ls(char *path){
+	syscall(SYS_LS, (uint32_t)path, 0, 0, 0, 0);
+}
+
+void cat(char *path){
+	syscall(SYS_CAT, (uint32_t)path, 0, 0, 0, 0);
+}

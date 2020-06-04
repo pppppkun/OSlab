@@ -1,5 +1,6 @@
 #include "x86.h"
 #include "device.h"
+#include "fs.h"
 
 #define SYS_WRITE 0
 #define SYS_FORK 1
@@ -10,6 +11,12 @@
 #define SYS_SEM 6
 #define SYS_GETPID 7
 #define SYS_RAND 8
+#define SYS_OPEN 9
+#define SYS_LSEEK 10
+#define SYS_CLOSE 11
+#define SYS_REMOVE 12
+#define SYS_LS 13
+#define SYS_CAT 14
 
 #define STD_OUT 0
 #define STD_IN 1
@@ -36,6 +43,8 @@ extern int bufferTail;
 
 uint8_t shMem[MAX_SHMEM_SIZE];
 
+void printHelp(char *src, int size);
+
 void syscallHandle(struct TrapFrame *tf);
 void syscallWrite(struct TrapFrame *tf);
 void syscallRead(struct TrapFrame *tf);
@@ -46,6 +55,12 @@ void syscallExit(struct TrapFrame *tf);
 void syscallSem(struct TrapFrame *tf);
 void syscallGetPid(struct TrapFrame *tf);
 void syscallRand(struct TrapFrame *tf);
+void syscallOpen(struct TrapFrame *tf);
+void syscallLseek(struct TrapFrame *tf);
+void syscallClose(struct TrapFrame *tf);
+void syscallRemove(struct TrapFrame *tf);
+void syscallLs(struct TrapFrame *tf);
+void syscallCat(struct TrapFrame *tf);
 
 void syscallWriteStdOut(struct TrapFrame *tf);
 void syscallReadStdIn(struct TrapFrame *tf);
@@ -61,6 +76,39 @@ void syscallSemInit(struct TrapFrame *tf);
 void syscallSemWait(struct TrapFrame *tf);
 void syscallSemPost(struct TrapFrame *tf);
 void syscallSemDestroy(struct TrapFrame *tf);
+
+void printHelp(char *src, int size){
+	int i;
+	uint16_t data;
+	int pos;
+	for (i = 0; i < size; i++) {
+		if (src[i] == '\n') {
+			displayRow++;
+			displayCol = 0;
+			if (displayRow == 25){
+				displayRow = 24;
+				displayCol = 0;
+				scrollScreen();
+			}
+		}
+		else {
+			data = src[i] | (0x0c << 8);
+			pos = (80 * displayRow + displayCol) * 2;
+			asm volatile("movw %0, (%1)"::"r"(data),"r"(pos + 0xb8000));
+			displayCol++;
+			if (displayCol == 80){
+				displayRow++;
+				displayCol = 0;
+				if (displayRow == 25){
+					displayRow = 24;
+					displayCol = 0;
+					scrollScreen();
+				}
+			}
+		}
+	}
+	updateCursor(displayRow, displayCol);
+}
 
 void irqHandle(struct TrapFrame *tf) { // pointer tf = esp
 	/*
@@ -122,10 +170,31 @@ void syscallHandle(struct TrapFrame *tf) {
 			break; // for SYS_GETPID
 		case SYS_RAND:
 			syscallRand(tf);
+			break; // for SYS_RAND
+		case SYS_OPEN:
+			syscallOpen(tf);
+			break;
+		case SYS_LSEEK:
+			syscallLseek(tf);
+			break;
+		case SYS_CLOSE:
+			syscallClose(tf);
+			break;
+		case SYS_REMOVE:
+			syscallRemove(tf);
+			break;
+		case SYS_LS:
+			syscallLs(tf);
+			break;
+		case SYS_CAT:
+			syscallCat(tf);
 			break;
 		default:break;
 	}
 }
+
+
+
 
 void timerHandle(struct TrapFrame *tf) {
 	uint32_t tmpStackTop;
@@ -610,5 +679,48 @@ void syscallRand(struct TrapFrame *tf)
 
 void GProtectFaultHandle(struct TrapFrame *tf){
 	assert(0);
+	return;
+}
+
+void syscallOpen(struct TrapFrame *tf){
+	//TODO
+	return;
+}
+
+void syscallLseek(struct TrapFrame *tf){
+	//TODO
+	return;
+}
+void syscallClose(struct TrapFrame *tf){
+	//TODO
+	return;
+}
+void syscallRemove(struct TrapFrame *tf){
+	//TODO
+	return;
+}
+
+void syscallLs(struct TrapFrame *tf){
+	//TODO
+	int sel = tf->ds;
+	char *str = (char *)tf->ecx;
+	char tmp[128];
+	int i = 0;
+	char character = 0;
+	asm volatile("movw %0, %%es"::"m"(sel));
+	asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
+	while (character != 0) {
+		tmp[i] = character;
+		i++;
+		asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
+	}
+	tmp[i] = 0;
+	char dir[512];
+	int size;
+	ls(tmp, dir, &size);
+	printHelp(dir, size);
+}
+void syscallCat(struct TrapFrame *tf){
+	//TODO
 	return;
 }
