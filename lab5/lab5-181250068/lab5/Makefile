@@ -9,10 +9,11 @@ os.img:
 	@cd reader_writer; make
 	@cd app_print; make
 	@cd app; make
+	@cd shell; make
 	@#cat bootloader/bootloader.bin kernel/kMain.bin app/uMain.bin > os.img
 	@#cat bootloader/bootloader.bin kernel/kMain.bin app/uMain.elf > os.img
 	@#cat bootloader/bootloader.bin kernel/kMain.elf app/uMain.elf > os.img
-	@./utils/genFS/genFS app/uMain.elf app_print/app_print.elf bounded_buffer/bounded_buffer.elf philosopher/philosopher.elf reader_writer/reader_writer.elf
+	@./utils/genFS/genFS shell/shell.elf app/uMain.elf app_print/app_print.elf bounded_buffer/bounded_buffer.elf philosopher/philosopher.elf reader_writer/reader_writer.elf
 	cat bootloader/bootloader.bin kernel/kMain.elf fs.bin > os.img
 
 play: os.img
@@ -30,4 +31,5 @@ clean:
 	@cd reader_writer; make clean
 	@cd app_print; make clean
 	@cd app; make clean
+	@cd shell; make clean
 	rm -f fs.bin os.img

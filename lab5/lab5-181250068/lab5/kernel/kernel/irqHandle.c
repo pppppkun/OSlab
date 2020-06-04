@@ -711,6 +711,7 @@ void syscallLs(struct TrapFrame *tf){
 	asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
 	while (character != 0) {
 		tmp[i] = character;
+		putChar(tmp[i]);
 		i++;
 		asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
 	}
