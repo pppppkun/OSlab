@@ -13,7 +13,7 @@ os.img:
 	@#cat bootloader/bootloader.bin kernel/kMain.bin app/uMain.bin > os.img
 	@#cat bootloader/bootloader.bin kernel/kMain.bin app/uMain.elf > os.img
 	@#cat bootloader/bootloader.bin kernel/kMain.elf app/uMain.elf > os.img
-	@./utils/genFS/genFS shell/shell.elf app/uMain.elf app_print/app_print.elf bounded_buffer/bounded_buffer.elf philosopher/philosopher.elf reader_writer/reader_writer.elf
+	@./utils/genFS/genFS app/uMain.elf shell/shell.elf app_print/app_print.elf bounded_buffer/bounded_buffer.elf philosopher/philosopher.elf reader_writer/reader_writer.elf
 	cat bootloader/bootloader.bin kernel/kMain.elf fs.bin > os.img
 
 play: os.img

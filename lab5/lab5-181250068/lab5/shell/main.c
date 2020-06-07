@@ -1,17 +1,11 @@
 #include "lib.h"
 #include "types.h"
 #define NULL ((void*)0)
-struct Dir
-{
-    char name[64];
-    struct Dir *prev;
-};
-typedef struct Dir Dir;
+
 
 char path[64];
 char ls_[2];
 char cd_[2];
-char buffer[1024];
 
 void cd(char *path_){
     path[0]='/';
@@ -24,7 +18,7 @@ void cd(char *path_){
 
 void execute(char *code){
     int flag=1;
-    for(int i = 0;i<1;i++){
+    for(int i = 0;i<2;i++){
         if(code[i]!=ls_[i]){
             flag=0;
             break;
@@ -37,7 +31,7 @@ void execute(char *code){
     }
 
     flag=1;
-    for(int i = 0;i<1;i++){
+    for(int i = 0;i<2;i++){
         if(code[i]!=cd_[i]){
             flag=0;
             break;
@@ -53,9 +47,7 @@ void execute(char *code){
 void init(){
     ls_[0]='l'; ls_[1]='s';
     cd_[0]='c'; cd_[1]='d';
-    for(int i = 0;i<1024;i++){
-        buffer[i]='\0';
-    }
+
     for(int i = 0;i<64;i++){
         path[i]='\0';
     }
@@ -65,10 +57,20 @@ void init(){
 int main(void)
 {
     init();
+    /*char buffer[6];
     while(1){
         printf("pkun@qemu:");
-        printf("%s", path);printf(" ");
-        scanf("%1024s",buffer);
+        scanf(" Test %6s", buffer);
         execute(buffer);
-    }
+
+    }*/
+
+	char str[6];
+	char cha = 0;
+	while(1){
+		printf("Input:\" Test %%c Test %%6s %%d %%x\"\n");
+		scanf("Test %c Test %6s", &cha, str);
+        printf("%s", str);
+        execute(str);
+	} 
 }

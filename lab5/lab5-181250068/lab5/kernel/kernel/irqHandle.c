@@ -339,7 +339,6 @@ void syscallWriteShMem(struct TrapFrame *tf) {
 	while(i<size)
 	{
 		asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
-		putChar(character);
 		shMem[j+index] = character;
 		i = i + 1;
 		j = (j + 1) % MAX_SHMEM_SIZE;
@@ -454,7 +453,6 @@ void syscallReadShMem(struct TrapFrame *tf) {
 	int index = tf->esi;
 	char character = 0;
 	asm volatile("movw %0, %%es"::"m"(sel));
-	putString("ReadShMem\n");
 	int i = 0;
 	int j = 0;
 	while(i<size)
@@ -684,6 +682,23 @@ void GProtectFaultHandle(struct TrapFrame *tf){
 
 void syscallOpen(struct TrapFrame *tf){
 	//TODO
+	int sel = tf->ds;
+	putString("open");
+	char *str = (char *)tf->ecx;
+	//int flag = tf->edx;
+	char character = 0;
+	char filePath[64];
+	asm volatile("movw %0, %%es"::"m"(sel));
+	int i = 0;
+	do
+	{
+		asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
+		filePath[i] = character;
+		putChar(character);
+		i = i + 1;
+	}while(filePath[i-1]!='\0');
+	
+	pcb[current].regs.eax = 10;
 	return;
 }
 
@@ -711,7 +726,6 @@ void syscallLs(struct TrapFrame *tf){
 	asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
 	while (character != 0) {
 		tmp[i] = character;
-		putChar(tmp[i]);
 		i++;
 		asm volatile("movb %%es:(%1), %0":"=r"(character):"r"(str + i));
 	}
